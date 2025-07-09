@@ -2,13 +2,16 @@ import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
 import { marked } from "marked";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 
-const fs = require("fs");
-const matter = require("gray-matter");
-const { marked } = require("marked");
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-const folder = "./blog-posts";
-const outputDir = "./public/posts";
+// Paths
+const folder = path.join(__dirname, "blog-posts");
+const outputDir = path.join(__dirname, "public/posts");
 
 if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir, { recursive: true });
@@ -18,7 +21,8 @@ const files = fs.readdirSync(folder);
 const posts = [];
 
 files.forEach((filename) => {
-  const content = fs.readFileSync(`${folder}/${filename}`, "utf-8");
+  const filePath = path.join(folder, filename);
+  const content = fs.readFileSync(filePath, "utf-8");
   const { data, content: markdown } = matter(content);
 
   const slug = data.slug || filename.replace(".md", "");
@@ -48,10 +52,14 @@ files.forEach((filename) => {
     </html>
   `;
 
-  fs.writeFileSync(`${outputDir}/${slug}.html`, html);
+  const outPath = path.join(outputDir, `${slug}.html`);
+  fs.writeFileSync(outPath, html);
   posts.push({ ...data, slug });
 });
 
 // Save metadata for preview cards
 posts.sort((a, b) => new Date(b.date) - new Date(a.date));
-fs.writeFileSync("public/posts.json", JSON.stringify(posts, null, 2));
+fs.writeFileSync(
+  path.join(__dirname, "public/posts.json"),
+  JSON.stringify(posts, null, 2)
+);
